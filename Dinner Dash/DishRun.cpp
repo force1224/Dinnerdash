@@ -1,93 +1,149 @@
 #include <iostream>
-#include <vector>
 #include <string>
+#include <ctime>
 
-// Enum untuk status pesanan
-enum class OrderStatus {
-    NotYetTaken,
-    InKitchen,
-    Served
+using namespace std;
+
+// Enumerasi untuk merepresentasikan status pesanan
+enum class StatusPesanan {
+    BelumDiambil,
+    DiDapur,
+    Dihidangkan
 };
 
-// Kelas Order untuk menyimpan informasi pesanan
-class Order {
-public:
-    Order(int id, const std::string& description)
-        : id(id), description(description), status(OrderStatus::NotYetTaken) {}
-
-    int getId() const { return id; }
-    const std::string& getDescription() const { return description; }
-    OrderStatus getStatus() const { return status; }
-    void setStatus(OrderStatus newStatus) { status = newStatus; }
-
+// Kelas untuk merepresentasikan meja
+class Meja {
 private:
-    int id;
-    std::string description;
-    OrderStatus status;
-};
+    int nomorMeja;
+    string pesanan;
+    StatusPesanan status;
 
-// Kelas TableDisplay untuk menampilkan status pesanan
-class TableDisplay {
 public:
-    void displayOrderTable(const std::vector<Order>& orders) {
-        std::cout << "Order Table:\n";
-        for (const auto& order : orders) {
-            std::cout << "Order ID: " << order.getId() 
-                      << ", Description: " << order.getDescription()
-                      << ", Status: " << statusToString(order.getStatus()) << "\n";
-        }
+    Meja(int num) : nomorMeja(num), status(StatusPesanan::BelumDiambil) {}
+
+    void tempatkanPesanan(const string& detailPesanan) {
+        pesanan = detailPesanan;
+        status = StatusPesanan::BelumDiambil;
     }
 
-private:
-    std::string statusToString(OrderStatus status) const {
+    void perbaruiStatus(StatusPesanan statusBaru) {
+        status = statusBaru;
+    }
+
+    void tampilkanPesanan() const {
+        string statusStr;
         switch (status) {
-            case OrderStatus::NotYetTaken: return "Not Yet Taken";
-            case OrderStatus::InKitchen: return "In Kitchen";
-            case OrderStatus::Served: return "Served";
-            default: return "Unknown";
+            case StatusPesanan::BelumDiambil: statusStr = "Belum Diambil"; break;
+            case StatusPesanan::DiDapur: statusStr = "Di Dapur"; break;
+            case StatusPesanan::Dihidangkan: statusStr = "Dihidangkan"; break;
         }
+        cout << "Meja " << nomorMeja << ": Pesanan - " << pesanan << ", Status - " << statusStr << "\n" << endl;
+    }
+
+    string ambilPesanan() const {
+        return pesanan;
     }
 };
 
-// Kelas OrderManager untuk mengelola pesanan
-class OrderManager {
+// Kelas untuk mengelola emosi pelanggan
+class Pelanggan {
+private:
+    int nilaiEmosi; // 1 hingga 5, di mana 5 adalah yang paling bahagia
+    clock_t waktuMulai;
+
 public:
-    void addOrder(const Order& order) {
-        orders.push_back(order);
+    Pelanggan() : nilaiEmosi(5), waktuMulai(clock()) {}
+
+    void turunkanEmosi() {
+        if (nilaiEmosi > 1) --nilaiEmosi;
     }
 
-    void updateOrderStatus(int id, OrderStatus newStatus) {
-        for (auto& order : orders) {
-            if (order.getId() == id) {
-                order.setStatus(newStatus);
-                return;
+    void tampilkanEmosi() const {
+        if (nilaiEmosi > 1){
+            cout << "Nilai Emosi Pelanggan: " << nilaiEmosi << endl;
+        }else{
+            cout << "Nilai Emosi Pelanggan: " << nilaiEmosi << "\n" << endl;
+        }
+    }
+
+    void simulasiMenunggu() {
+        while (nilaiEmosi > 1) {
+            clock_t waktuSekarang = clock();
+            double durasi = (waktuSekarang - waktuMulai) / (double)CLOCKS_PER_SEC;
+
+            if (durasi >= 1) {
+                turunkanEmosi();
+                tampilkanEmosi();
+                waktuMulai = waktuSekarang; // Reset timer
             }
         }
     }
 
-    const std::vector<Order>& getOrders() const {
-        return orders;
+    void setEmosiKeMax() {
+        nilaiEmosi = 5;
+        tampilkanEmosi();
     }
-
-private:
-    std::vector<Order> orders;
 };
 
+// Kelas untuk merepresentasikan dapur
+class Dapur {
+public:
+    void siapkanPesanan(const string& detailPesanan) {
+        cout << "Menyediakan pesanan: " << detailPesanan << endl;
+        // Simulasikan waktu yang dibutuhkan untuk menyiapkan
+        for (int i = 0; i < 5; ++i) {
+            cout << "Menyiapkan..." << endl;
+            for (volatile long j = 0; j < 100000000; ++j); // Simulasi penundaan
+        }
+    }
+};
+
+// Kelas untuk merepresentasikan pelayan
+class Pelayan {
+private:
+    Dapur& dapur;
+
+public:
+    Pelayan(Dapur& d) : dapur(d) {}
+
+    void beriTahuPesananSiap() {
+        cout << "Pesanan sudah siap untuk diantar!" << endl;
+    }
+
+    void antarkanPesanan(Meja& meja, Pelanggan& pelanggan) {
+        dapur.siapkanPesanan(meja.ambilPesanan());
+        meja.perbaruiStatus(StatusPesanan::Dihidangkan);
+        meja.tampilkanPesanan();
+        pelanggan.setEmosiKeMax();
+    }
+};
+
+// Fungsi utama untuk menjalankan simulasi
 int main() {
-    OrderManager orderManager;
-    TableDisplay tableDisplay;
+    // Inisialisasi meja, dapur, pelayan, dan pelanggan
+    Meja meja1(1);
+    Meja meja2(2);
+    Dapur dapur;
+    Pelayan pelayan(dapur);
+    Pelanggan pelanggan;
 
-    // Menambahkan beberapa pesanan
-    orderManager.addOrder(Order(1, "Burger"));
-    orderManager.addOrder(Order(2, "Pizza"));
-    orderManager.addOrder(Order(3, "Pasta"));
+    // Tempatkan pesanan di meja
+    meja1.tempatkanPesanan("Pasta");
+    meja2.tempatkanPesanan("Burger");
+    
+    meja1.tampilkanPesanan();
 
-    // Memperbarui status beberapa pesanan
-    orderManager.updateOrderStatus(1, OrderStatus::InKitchen);
-    orderManager.updateOrderStatus(2, OrderStatus::Served);
+    // Simulasikan pelanggan menunggu (dalam bentuk loop)
+    pelanggan.simulasiMenunggu();
+    
+    meja2.tampilkanPesanan();
+    
 
-    // Menampilkan status pesanan
-    tableDisplay.displayOrderTable(orderManager.getOrders());
+    // Pelayan memproses pesanan
+    pelayan.antarkanPesanan(meja1, pelanggan);
+    pelanggan.simulasiMenunggu();
+    
+    pelayan.antarkanPesanan(meja2, pelanggan);
 
     return 0;
 }
